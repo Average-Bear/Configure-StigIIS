@@ -1,6 +1,7 @@
 # Configure-StigIIS    
 
     Proceed at your own risk.
+    
     STIG Release: 2018 Q3
     Not all IIS STIG items are addressed, as some require specific environment information. 
     This will either configure or report the status of the vulnerabilities below and eliminate a major portion of all items needing to be reviewed.

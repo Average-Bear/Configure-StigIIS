@@ -6,7 +6,7 @@
     Not all IIS 8.5 Site/Server STIG items are addressed, as some require specific environment information. 
     This will either configure or report the status of the vulnerabilities below and eliminate a major portion of all items needing to be reviewed.
     
-    Before proceeding, snapshot any virtual machine you run this on. If you notice that your sites go down, revert the snapshot and comment out sections of the functions at the end of this script. There are some functions built below that have had the configuration portion commented out purposesly because that settings broke a portion of the Web Server (SolarWinds specfically).
+    Before proceeding, snapshot any virtual machine you run this on. If you notice that your sites go down, revert the snapshot and comment out sections of the functions at the end of this script. There are some functions built below that have had the configuration portion commented out purposesly because that settings broke a portion of the Web Server (SolarWinds specifically).
     Feel free to uncomment and test these for yourself, if needed. 
 
     Reports will be output to the $ServerPath variable; you will need to set this for the desired location.

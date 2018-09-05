@@ -40,8 +40,6 @@ param(
     [String] $ServerPath = "$([Environment]::GetFolderPath("MyDocuments"))\IIS\$Computername"
 )
 
-Start-Transcript -Path "$ServerPath\IIS-Transcript.txt" -Verbose -Force
-
 if(!(Test-Path $ServerPath)) {
 
     New-Item -ItemType Directory $ServerPath -Force
@@ -3239,6 +3237,8 @@ function V-76883 {
         }
     }
 }
+
+Start-Transcript -Path "$ServerPath\IIS-Transcript.txt" -Verbose -Force
 
 #Call functions, configure settings, and generate reports
 V-76679-76779-76781

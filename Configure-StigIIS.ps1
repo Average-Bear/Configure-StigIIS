@@ -5,6 +5,9 @@
 .DESCRIPTION 
     Check, remediate, and report IIS 8.5 Server and Site STIG vulnerabilities.
 
+.PARAMETER Serverpath
+    Set to desired local or network path for storing IIS configuration reports.
+
 .NOTES
     Author: JBear
     Date: 9/5/2018
@@ -17,7 +20,7 @@
     You will be able to troubleshoot things pretty quickly like this. There are some functions built below that have had the configuration portion commented out purposesly because that settings broke a portion of the Web Server.
     Feel free to uncomment and test these for yourself, if needed. 
 
-    Reports will be output to the $ServerPath variable; you will need to set this for the desired location.
+    Transcript report will be output to the $ServerPath variable; you will need to set this for the desired location.
 
     Configured/Reported Vulnerabilities: 
     V-76679, V-76779, V-76781, V-76681, V-76783, V-76683, V-76785, V-76685, V-76787, V-76687, V-76689, V-76789, V-76791, V-76695, V-76697, V-76795, V-76701, V-76703, V-76707, V-76719, V-76709, V-76711, V-76797, V-76713, V-76803, 
@@ -36,6 +39,8 @@ param(
     [Parameter(ValueFromPipeline=$true)]
     [String] $ServerPath = "$([Environment]::GetFolderPath("MyDocuments"))\IIS\$Computername"
 )
+
+Start-Transcript -Path "$ServerPath\IIS-Transcript.txt" -Verbose -Force
 
 if(!(Test-Path $ServerPath)) {
 
@@ -83,6 +88,8 @@ function V-76759 {
         [Parameter(Dontshow)]
         [String]$SubKeyName = 'DisabledByDefault'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     foreach($Key0 in $RegKeys0) {
 
@@ -204,6 +211,8 @@ function V-76707-76719 {
     Check baseline account/security group accesses for vulnerability 76707 & 76719.
 #>
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     #Get Local administrators and groups
     $LocalGroups = net localgroup | where {$_ -notmatch "command completed successfully" -or $_ -notmatch ''} | select -Skip 6 | ForEach-Object {$_.Replace('*','')}
     $LocalAdmin = net localgroup Administrators | where {$_ -notmatch "command completed successfully"} | select -Skip 6
@@ -268,6 +277,8 @@ function V-76681-76783 {
 .DESCRIPTION
     Add STIG required data fields to the logging feature, including currently active fields for vulnerability 76681 & 76783.
 #>
+       
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
         
     #STIG required log fields
     $RequiredFields = @(
@@ -350,6 +361,8 @@ function V-76683-76785 {
         [Parameter(DontShow)]
         [String]$LogValues = "File,ETW"
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     #Get pre-configuration values
     $PreWeb = Get-WebConfigurationProperty -PSPath $WebPath -Filter $FilterPath -Name $LogTarget 
@@ -437,6 +450,8 @@ function V-76685-76787 {
         [Parameter(DontShow)]
         $WebIP = (Get-NetIPAddress | Where { $_.InterfaceAlias -notlike "*Loopback*"}).IPAddress
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
             
     #Retrieve most recent log file
     $CurrentLog = Get-ChildItem $LogFilePath -Force | Sort LastWriteTime -Descending | Select -First 1
@@ -539,6 +554,8 @@ function V-76687-76689-76789-76791 {
         $HTTPUserAgent
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     #All website names
     $WebNames = (Get-Website).Name
 
@@ -596,7 +613,9 @@ function V-76679-76779-76781 {
         [Parameter(DontShow)]
         $WebNames = (Get-Website).Name
     )
-            
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+     
     foreach($Webname in $WebNames) {    
                 
         #Pre-configuration SSL values
@@ -729,6 +748,8 @@ function V-76695-76697-76795 {
         [String]$LogDirectory = (Get-WebConfigurationProperty -PSPath $WebPath -Filter "system.applicationHost/sites/sitedefaults/logfile" -Name Directory).Value.Replace('%SystemDrive%',"$env:SystemDrive")
     )
 
+    Write-Host "`nReporting STIG Settings for $($MyInvocation.MyCommand):`n"
+
     #Child directories of IIS log directory
     $LogDirectoryChildren = (Get-ChildItem -Path $LogDirectory -Directory -Recurse -Force)
 
@@ -758,7 +779,9 @@ function V-76701 {
 .DESCRIPTION
     Report installed software for vulnerability 76701. Needs to be assessed manually.
 #>
-        
+      
+    Write-Host "`nReporting STIG Settings for $($MyInvocation.MyCommand):`n"
+            
     if($PSVersionTable.PSVersion -ge "5.0") {
             
         Get-Package
@@ -822,6 +845,8 @@ function V-76703 {
         $WebNames = (Get-Website).Name
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($Webname in $WebNames) {
 
         try {
@@ -859,6 +884,8 @@ function V-76709 {
 .DESCRIPTION
     Report installed Windows Features for vulnerability 76709.
 #>
+
+    Write-Host "`nReporting STIG Settings for $($MyInvocation.MyCommand):`n"
             
     #Get all installed Windows Features
     $Features = Get-WindowsFeature | Where {$_.InstallState -eq 'Installed' -or $_.InstallState -eq 'InstallPending'}
@@ -882,6 +909,8 @@ function V-76711-76797 {
 .DESCRIPTION
     Remove required MIME mappings for vulnerability 76711 & 76797.
 #>
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
         
     #Pre-Configuration MIME map collection
     $PreMimeConfig = (Get-WebConfiguration //staticcontent).Collection
@@ -918,6 +947,8 @@ function V-76713-76803 {
         
         $DAVFeature = 'Web-DAV-Publishing'
     )
+    
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
         
     #Remove Web-DAV-Publishing feature
     $RemoveFeature = Remove-WindowsFeature -Name $DAVFeature
@@ -957,6 +988,8 @@ function V-76715 {
         [String]$Server = $env:COMPUTERNAME
     )
 
+    Write-Host "`nReporting STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $RO = [System.Security.Cryptography.X509Certificates.OpenFlags]"ReadOnly"
     $LM = [System.Security.Cryptography.X509Certificates.StoreLocation]"LocalMachine"
 
@@ -985,6 +1018,8 @@ function V-76717 {
 .DESCRIPTION
     Remove all *.jpp,*.java files for vulnerability 76717.
 #>
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     $JavaFiles = Get-ChildItem -Path $env:SystemDrive -File -Include *.jpp,*.java -Recurse -Force -ErrorAction SilentlyContinue
             
@@ -1040,6 +1075,8 @@ function V-76725-76727-76777 {
         $FilterPath = 'system.web/sessionState'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($WebName in $WebNames) {
             
         $PreCookieConfig = Get-WebConfigurationProperty -Location $Webname -Filter $FilterPath -Name CookieLess
@@ -1091,6 +1128,8 @@ function V-76731 {
         [Parameter(DontShow)]
         $FilterPath = 'system.web/machineKey'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
     
     $PreConfigValidation = Get-WebConfigurationProperty -Filter $FilterPath -Name Validation
     $PreConfigEncryption = Get-WebConfigurationProperty -Filter $FilterPath -Name Decryption
@@ -1137,6 +1176,8 @@ function V-76733-76829 {
         [Parameter(DontShow)]
         $FilterPath = 'system.webServer/directoryBrowse'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
         
     foreach($WebName in $Webnames) {
 
@@ -1198,11 +1239,13 @@ function V-76735 {
 .DESCRIPTION
     Configure and verify Indexing configurations for vulnerability 76735.
 #>
-param(
+    param(
 
-    [Parameter(DontShow)]
-    [String] $RegPath = "HKLM:\System\CurrentControlSet\Control\ContentIndex\Catalogs"
-)
+        [Parameter(DontShow)]
+        [String] $RegPath = "HKLM:\System\CurrentControlSet\Control\ContentIndex\Catalogs"
+    )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     if(!(Test-Path $RegPath)) {
 
@@ -1246,6 +1289,8 @@ function V-76737-76835 {
         $FilterPath = 'system.webServer/httpErrors'
     )
         
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($WebName in $Webnames) {
 
         $PreErrorMode = Get-WebConfigurationProperty -Filter $FilterPath -Name ErrorMode
@@ -1291,6 +1336,8 @@ function V-76753 {
         [String[]]$PrintServices = @("Print-Services", "Print-Internet")
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $PrintFeatures = Get-WindowsFeature -Name $PrintServices
 
     foreach($Feature in $PrintFeatures) {
@@ -1335,6 +1382,8 @@ function V-76755 {
         )
     )
 
+    Write-Host "`nReporting STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($Key in $Keys) {
 
         $KeyCompliant = if(!(Test-Path "$($ParameterKey)\$($Key)")) {
@@ -1374,6 +1423,8 @@ function V-76757-76855 {
         [Parameter(DontShow)]
         $FilterPath = 'system.webServer/asp/session'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     $PreConfigSessionID = Get-WebConfigurationProperty -Filter $FilterPath  -Name KeepSessionIdSecure
     
@@ -1440,6 +1491,8 @@ function V-76767 {
         [String] $FSOKey = "HKCR:\CLSID\{0D43FE01-F093-11CF-8940-00A0C9054228}"
     )
 
+    Write-Host "`nReporting STIG Settings for $($MyInvocation.MyCommand):`n"
+
     New-PSDrive -PSProvider Registry -root HKEY_CLASSES_ROOT -Name HKCR | Out-Null
 
     $ComponentEnabled = if(Test-Path $FSOKey) {
@@ -1492,6 +1545,8 @@ function V-76769 {
         [Parameter(DontShow)]
         $FilterPath = 'system.webserver/security/isapiCgiRestriction'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
     
     $PreConfigCGIExtension = Get-WebConfigurationProperty -Filter $FilterPath -Name "notListedCgisAllowed"
     $PreConfigISAPIExtension = Get-WebConfigurationProperty -Filter $FilterPath -Name "notListedIsapisAllowed"
@@ -1539,6 +1594,8 @@ function V-76771 {
         [String]$Settings = "[@roles='' and @users='*' and @verbs='']"
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $PreConfigUsers = Get-WebConfigurationProperty -Filter $FilterPath -Name Users
 
     Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT' -Filter "$($FilterPath)$($Settings)" -Name Users -Value "Administrators"
@@ -1581,6 +1638,8 @@ function V-76811 {
         [String]$FilterPath = 'system.webServer/security/authentication/anonymousAuthentication'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $PreConfigAnonymousAuthentication = Get-WebConfigurationProperty -Filter $FilterPath -Name Enabled
 
     Set-WebConfigurationProperty -PSPath $PSPath -Filter $FilterPath -Name Enabled -Value "False"
@@ -1622,6 +1681,8 @@ function V-76773 {
         [String]$FilterPath = 'system.applicationHost/sites/siteDefaults'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $MaxConnections = Get-WebConfigurationProperty -Filter $FilterPath -Name Limits
 
     [PSCustomObject] @{
@@ -1657,6 +1718,8 @@ function V-76775-76813 {
         [Parameter(DontShow)]
         [String]$FilterPath = 'system.web/sessionState'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     $PreConfigMode = Get-WebConfigurationProperty -Filter $FilterPath -Name Mode
 
@@ -1727,6 +1790,8 @@ function V-76805 {
         $FilterPath = 'system.web/trust'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($Webname in $WebNames) {
 
         $PreConfigTrustLevel = (Get-WebConfigurationProperty -Location $Webname -Filter $FilterPath -Name Level).Value
@@ -1776,6 +1841,8 @@ function V-76809-76851-76861 {
         [Parameter(DontShow)]
         $WebNames = (Get-Website).Name
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
                
     foreach($Webname in $WebNames) {    
                 
@@ -2168,6 +2235,8 @@ function V-76817 {
         [Int]$MaxUrl = 4096
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($WebName in $WebNames) {
 
         $PreConfigMaxUrl = Get-WebConfigurationProperty -Filter $FilterPath -Name MaxUrl
@@ -2214,6 +2283,8 @@ function V-76819 {
 
         [Int]$MaxContentLength = 30000000
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     foreach($WebName in $WebNames) {
 
@@ -2262,6 +2333,8 @@ function V-76821 {
         [Int]$MaxQueryString = 2048
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($WebName in $WebNames) {
 
         $PreConfigMaxQueryString = Get-WebConfigurationProperty -Filter $FilterPath -Name maxQueryString
@@ -2307,6 +2380,8 @@ function V-76823 {
         [String]$FilterPath = 'system.webServer/security/requestFiltering'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($WebName in $WebNames) {
 
         $PreConfigHighBit = Get-WebConfigurationProperty -Location $WebName -Filter $FilterPath -Name allowHighBitCharacters
@@ -2351,6 +2426,8 @@ function V-76825 {
         [Parameter(DontShow)]
         [String]$FilterPath = 'system.webServer/security/requestFiltering'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     foreach($WebName in $WebNames) {
 
@@ -2400,6 +2477,8 @@ function V-76827 {
         [String]$FilterPath = 'system.webServer/security/requestFiltering/fileExtensions'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($WebName in $WebNames) {
 
         $PreConfigUnlistedExtensions = Get-WebConfigurationProperty -Location $WebName -Filter $FilterPath -Name allowUnlisted
@@ -2444,6 +2523,8 @@ function V-76831 {
         [Parameter(DontShow)]
         [String]$FilterPath = 'system.webServer/defaultDocument'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     foreach($WebName in $WebNames) {
 
@@ -2504,6 +2585,8 @@ function V-76837 {
         [String]$FilterPath = 'system.web/compilation'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($WebName in $WebNames) {
 
         $PreConfigDebugBehavior = Get-WebConfigurationProperty -Location $WebName -Filter $FilterPath -Name Debug
@@ -2549,6 +2632,8 @@ function V-76839 {
         [String]$FilterPath = 'system.applicationHost/applicationPools/applicationPoolDefaults/processModel'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $PreConfigTimeOut = Get-WebConfigurationProperty -Filter $FilterPath -Name idleTimeOut
         
     if(!([Int]([TimeSpan]$PreConfigTimeOut.Value).TotalMinutes -le 20)) {
@@ -2593,6 +2678,8 @@ function V-76841 {
         [Parameter(DontShow)]
         [String]$FilterPath = 'system.web/sessionState'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     foreach($WebName in $WebNames) {
 
@@ -2645,6 +2732,8 @@ function V-76859 {
         [String]$FilterPathCompression = 'system.web/sessionState'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $PreConfigCookies = Get-WebConfigurationProperty -PSPath $PSpath -Filter $FilterPathCookies -Name requireSSL
     $PreConfigCompression = Get-WebConfigurationProperty -PSPath $PSpath -Filter $FilterPathCompression -Name compressionEnabled
 
@@ -2692,6 +2781,8 @@ function V-76867 {
         [Parameter(DontShow)]
         [Int64]$RequestsDefault = 100000
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     $AppPools = (Get-IISAppPool).Name
 
@@ -2743,6 +2834,8 @@ function V-76869 {
         [Int64]$VMemoryDefault = 1GB
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $AppPools = (Get-IISAppPool).Name
 
     foreach($Pool in $AppPools) {
@@ -2793,6 +2886,8 @@ function V-76871 {
         [Int64]$MemoryDefault = 1GB
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $AppPools = (Get-IISAppPool).Name
 
     foreach($Pool in $AppPools) {
@@ -2839,6 +2934,8 @@ function V-76873 {
         [Parameter(DontShow)]
         [String]$FilterPath = 'recycling.logEventOnRecycle'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     $AppPools = (Get-IISAppPool).Name
 
@@ -2908,6 +3005,8 @@ function V-76875 {
         [Int]$QLength = 1000
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $AppPools = (Get-IISAppPool).Name
 
     foreach($Pool in $AppPools) {
@@ -2955,6 +3054,8 @@ function V-76877 {
         [String]$FilterPath = 'processModel.pingingEnabled'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     $AppPools = (Get-IISAppPool).Name
 
     foreach($Pool in $AppPools) {
@@ -2998,6 +3099,8 @@ function V-76879 {
         [Parameter(DontShow)]
         [String]$FilterPath = 'failure.rapidFailProtection'
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     $AppPools = (Get-IISAppPool).Name
 
@@ -3046,6 +3149,8 @@ function V-76881 {
         $ProtectionInterval = "00:05:00"
 
     )
+
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
 
     $AppPools = (Get-IISAppPool).Name
 
@@ -3100,6 +3205,8 @@ function V-76883 {
         [String]$FilterPath = 'system.webserver/serverRuntime'
     )
 
+    Write-Host "`nConfiguring STIG Settings for $($MyInvocation.MyCommand):`n"
+
     foreach($WebName in $WebNames) {
 
         $PreConfigHostname = (Get-WebConfigurationProperty -Location $WebName -Filter $FilterPath -Name alternateHostname).Value
@@ -3134,54 +3241,56 @@ function V-76883 {
 }
 
 #Call functions, configure settings, and generate reports
-V-76679-76779-76781 | Export-Csv -Path "$ServerPath\V-76679-76779-76781.csv" -NoTypeInformation -Force
-V-76681-76783 | Export-Csv -Path "$ServerPath\V-76681-76783.csv" -NoTypeInformation -Force
-V-76683-76785 | Export-Csv -Path "$ServerPath\V-76683-76785.csv" -NoTypeInformation -Force
-V-76685-76787 | Export-Csv -Path "$ServerPath\V-76685-76787.csv" -NoTypeInformation -Force
-V-76687-76689-76789-76791 | Export-Csv -Path "$ServerPath\V-76687-76689-76789-76791.csv" -NoTypeInformation -Force
-V-76695-76697-76795 | Export-Csv -Path "$ServerPath\V-76695-76697-7679-76795.csv" -NoTypeInformation -Force
-V-76701 | Export-Csv -Path "$ServerPath\V-76701.csv" -NoTypeInformation -Force
-V-76703 | Export-Csv -Path "$ServerPath\V-76703.csv" -NoTypeInformation -Force
-V-76707-76719 | Export-Csv -Path "$ServerPath\V-76707-76719.csv" -NoTypeInformation -Force
-V-76709 | Export-Csv -Path "$ServerPath\V-76709.csv" -NoTypeInformation -Force
-V-76711-76797 | Export-Csv -Path "$ServerPath\V-76711-76797.csv" -NoTypeInformation -Force
-V-76713-76803 | Export-Csv -Path "$ServerPath\V-76713-76803.csv" -NoTypeInformation -Force
-V-76715 | Export-Csv -Path "$ServerPath\V-76715.csv" -NoTypeInformation -Force
-V-76717 | Export-Csv -Path "$ServerPath\V-76717.csv" -NoTypeInformation -Force
-V-76725-76727-76777 | Export-Csv -Path "$ServerPath\V-76725-76727-76777.csv" -NoTypeInformation -Force
-V-76731 | Export-Csv -Path "$ServerPath\V-76731.csv" -NoTypeInformation -Force
-V-76733-76829 | Export-Csv -Path "$ServerPath\V-76733-76829.csv" -NoTypeInformation -Force
-V-76735 | Export-Csv -Path "$ServerPath\V-76735.csv" -NoTypeInformation -Force
-V-76737-76835 | Export-Csv -Path "$ServerPath\V-76737-76835.csv" -NoTypeInformation -Force
-V-76753 | Export-Csv -Path "$ServerPath\V-76753.csv" -NoTypeInformation -Force
-V-76755 | Export-Csv -Path "$ServerPath\V-76755.csv" -NoTypeInformation -Force
-V-76757-76855 | Export-Csv -Path "$ServerPath\V-76757-76855.csv" -NoTypeInformation -Force
-V-76759 | Export-Csv -Path "$ServerPath\V-76759.csv" -NoTypeInformation -Force
-V-76767 | Export-Csv -Path "$ServerPath\V-76767.csv" -NoTypeInformation -Force
-V-76769 | Export-Csv -Path "$ServerPath\V-76769.csv" -NoTypeInformation -Force
-V-76771 | Export-Csv -Path "$ServerPath\V-76771.csv" -NoTypeInformation -Force
-V-76773 | Export-Csv -Path "$ServerPath\V-76773.csv" -NoTypeInformation -Force
-V-76775-76813 | Export-Csv -Path "$ServerPath\V-76775-76813.csv" -NoTypeInformation -Force
-V-76805 | Export-Csv -Path "$ServerPath\V-76805.csv" -NoTypeInformation -Force
-V-76809-76851-76861 | Export-Csv -Path "$ServerPath\V-76809-76851-76861.csv" -NoTypeInformation -Force
-V-76811 | Export-Csv -Path "$ServerPath\V-76811.csv" -NoTypeInformation -Force
-V-76817 | Export-Csv -Path "$ServerPath\V-76817.csv" -NoTypeInformation -Force
-V-76819 | Export-Csv -Path "$ServerPath\V-76819.csv" -NoTypeInformation -Force
-V-76821 | Export-Csv -Path "$ServerPath\V-76821.csv" -NoTypeInformation -Force
-V-76823 | Export-Csv -Path "$ServerPath\V-76823.csv" -NoTypeInformation -Force
-V-76825 | Export-Csv -Path "$ServerPath\V-76825.csv" -NoTypeInformation -Force
-V-76827 | Export-Csv -Path "$ServerPath\V-76827.csv" -NoTypeInformation -Force
-V-76831 | Export-Csv -Path "$ServerPath\V-76831.csv" -NoTypeInformation -Force
-V-76837 | Export-Csv -Path "$ServerPath\V-76837.csv" -NoTypeInformation -Force
-V-76839 | Export-Csv -Path "$ServerPath\V-76839.csv" -NoTypeInformation -Force
-V-76841 | Export-Csv -Path "$ServerPath\V-76841.csv" -NoTypeInformation -Force
-V-76859 | Export-Csv -Path "$ServerPath\V-76859.csv" -NoTypeInformation -Force
-V-76867 | Export-Csv -Path "$ServerPath\V-76867.csv" -NoTypeInformation -Force
-V-76869 | Export-Csv -Path "$ServerPath\V-76869.csv" -NoTypeInformation -Force
-V-76871 | Export-Csv -Path "$ServerPath\V-76871.csv" -NoTypeInformation -Force
-V-76873 | Export-Csv -Path "$ServerPath\V-76873.csv" -NoTypeInformation -Force
-V-76875 | Export-Csv -Path "$ServerPath\V-76875.csv" -NoTypeInformation -Force
-V-76877 | Export-Csv -Path "$ServerPath\V-76877.csv" -NoTypeInformation -Force
-V-76879 | Export-Csv -Path "$ServerPath\V-76879.csv" -NoTypeInformation -Force
-V-76881 | Export-Csv -Path "$ServerPath\V-76881.csv" -NoTypeInformation -Force
-V-76883 | Export-Csv -Path "$ServerPath\V-76883.csv" -NoTypeInformation -Force
+V-76679-76779-76781
+V-76681-76783
+V-76683-76785
+V-76685-76787
+V-76687-76689-76789-76791
+V-76695-76697-76795
+V-76701 
+V-76703 
+V-76707-76719
+V-76709 
+V-76711-76797 
+V-76713-76803 
+V-76715 
+V-76717 
+V-76725-76727-76777
+V-76731
+V-76733-76829
+V-76735
+V-76737-76835 
+V-76753 
+V-76755 
+V-76757-76855
+V-76759 
+V-76767 
+V-76769 
+V-76771 
+V-76773
+V-76775-76813 
+V-76805 
+V-76809-76851-76861
+V-76811 
+V-76817 
+V-76819 
+V-76821 
+V-76823 
+V-76825 
+V-76827 
+V-76831 
+V-76837 
+V-76839 
+V-76841 
+V-76859 
+V-76867 
+V-76869 
+V-76871 
+V-76873 
+V-76875 
+V-76877 
+V-76879 
+V-76881 
+V-76883
+
+Stop-Transcript
